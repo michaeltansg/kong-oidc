@@ -19,6 +19,7 @@ function OidcHandler:access(config)
   end
 
   if filter.shouldProcessRequest(oidcConfig) then
+    ngx.log(ngx.DEBUG, "OidcHandler processing request, path: " .. ngx.var.request_uri)
     session.configure(config)
     handle(oidcConfig)
   else
@@ -30,6 +31,11 @@ end
 
 function handle(oidcConfig)
   local response
+
+  -- Drop identity headers from the incoming request so a client cannot
+  -- spoof an authenticated identity to the upstream service. They are
+  -- re-populated below only from verified token/session data.
+  utils.clearTokenHeaders(oidcConfig)
 
   if oidcConfig.bearer_jwt_auth_enable then
     response = verify_bearer_jwt(oidcConfig)
@@ -68,7 +74,10 @@ function handle(oidcConfig)
       elseif response.id_token then
         utils.injectGroups(response.id_token, oidcConfig.groups_claim)
       end
-      utils.injectHeaders(oidcConfig.header_names, oidcConfig.header_claims, { response.user, response.id_token })
+      local claim_sources = {}
+      if response.user then claim_sources[#claim_sources + 1] = response.user end
+      if response.id_token then claim_sources[#claim_sources + 1] = response.id_token end
+      utils.injectHeaders(oidcConfig.header_names, oidcConfig.header_claims, claim_sources)
       if (not oidcConfig.disable_userinfo_header
           and response.user) then
         utils.injectUser(response.user, oidcConfig.userinfo_header_name)
@@ -118,7 +127,8 @@ function introspect(oidcConfig)
     end
     if err then
       if oidcConfig.bearer_only == "yes" then
-        ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. oidcConfig.realm .. '",error="' .. err .. '"'
+        ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. utils.sanitizeHeaderParam(oidcConfig.realm)
+          .. '",error="' .. utils.sanitizeHeaderParam(err) .. '"'
         return kong.response.error(ngx.HTTP_UNAUTHORIZED)
       end
       return nil

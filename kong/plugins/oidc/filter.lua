@@ -3,6 +3,12 @@ local M = {}
 local function shouldIgnoreRequest(patterns)
   if (patterns) then
     for _, pattern in ipairs(patterns) do
+      -- anchor the pattern to the start of the path unless it is already
+      -- anchored, so an ignore filter like "/public" cannot be triggered
+      -- by an unrelated path such as "/private/public" to bypass auth
+      if pattern:sub(1, 1) ~= "^" then
+        pattern = "^" .. pattern
+      end
       local isMatching = not (string.find(ngx.var.uri, pattern) == nil)
       if (isMatching) then return true end
     end
