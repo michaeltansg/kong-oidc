@@ -1,0 +1,50 @@
+kong/plugins/oidc/filter.lua
+  s_0d101bf6c65105::t_dbd43a27ba26fd 6-11
+kong/plugins/oidc/handler.lua
+  s_0d101bf6c65105::t_94195792d0a78e 130-131
+  s_0d101bf6c65105::t_1f913e40c4a2b7 77-80
+  s_0d101bf6c65105::t_d47bb41889571b 35-39
+  s_0d101bf6c65105::t_d42baacf54e0cb 22
+test/unit/test_header_claims.lua
+  s_0d101bf6c65105::t_bb7c845b6a4764 13
+  s_0d101bf6c65105::t_0cd705d806b111 33-57
+kong/plugins/oidc/utils.lua
+  s_0d101bf6c65105::t_26f50dccf37ebb 200-211
+  s_0d101bf6c65105::t_eb68324d9724e1 136-154
+  s_0d101bf6c65105::t_6a0e5c2ce76a0c 221-225,227
+test/unit/test_handler_mocking_openidc.lua
+  s_0d101bf6c65105::t_29074f95934af9 249-276
+  s_0d101bf6c65105::t_bb7c845b6a4764 16
+test/unit/test_filter.lua
+  s_0d101bf6c65105::t_60bc0eb180c13d 50-60
+test/unit/test_utils_bearer_access_token.lua
+  s_0d101bf6c65105::t_8d2265e0385752 35-42
+kong/plugins/oidc/schema.lua
+  s_0d101bf6c65105::t_c540d9f1608b29 106
+test/unit/test_already_auth.lua
+  s_0d101bf6c65105::t_bb7c845b6a4764 14
+test/unit/test_introspect.lua
+  s_0d101bf6c65105::t_bb7c845b6a4764 8
+README.md
+  s_0d101bf6c65105::t_2bc7c08bc9f878 82
+  s_0d101bf6c65105::t_df1f80776c0fac 153
+  s_0d101bf6c65105::t_1c33cf1c32716c 92
+test/unit/test_bearer_jwt_auth.lua
+  s_0d101bf6c65105::t_bb7c845b6a4764 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a5bb7ee4b897adb1bc6f1d455ff359e95ec7cb0f",
+  "prompts": {},
+  "sessions": {
+    "s_0d101bf6c65105": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c025ea14-8f87-471a-9e66-3b138e6c4048",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Michael Tan <tan.michael@mac.com>"
+    }
+  }
+}
