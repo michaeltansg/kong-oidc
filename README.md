@@ -79,7 +79,7 @@ If you're using `luarocks` execute the following:
 | `config.client_secret`                      |                                            | true     | OIDC Client secret                                                                                                                                                                      |
 | `config.discovery`                          | <https://.well-known/openid-configuration> | false    | OIDC Discovery Endpoint (`/.well-known/openid-configuration`)                                                                                                                           |
 | `config.scope`                              | openid                                     | false    | OAuth2 Token scope. To use OIDC it has to contains the `openid` scope                                                                                                                   |
-| `config.ssl_verify`                         | false                                      | false    | Enable SSL verification to OIDC Provider                                                                                                                                                |
+| `config.ssl_verify`                         | yes                                        | false    | Enable SSL verification to OIDC Provider. Enabled by default; only set to `no` in test environments, as disabling it allows tokens to be forged via a man-in-the-middle attack          |
 | `config.session_secret`                     |                                            | false    | Additional parameter, which is used to encrypt the session cookie. Needs to be random                                                                                                   |
 | `config.introspection_endpoint`             |                                            | false    | Token introspection endpoint                                                                                                                                                            |
 | `config.timeout`                            |                                            | false    | OIDC endpoint calls timeout                                                                                                                                                             |
@@ -89,7 +89,7 @@ If you're using `luarocks` execute the following:
 | `config.logout_path`                        | /logout                                    | false    | Absolute path used to logout from the OIDC RP                                                                                                                                           |
 | `config.unauth_action`                      | auth                                       | false    | What action to take when unauthenticated <br> - `auth` to redirect to the login page and attempt (re)authenticatation,<br> - `deny` to stop with 401                                    |
 | `config.recovery_page_path`                 |                                            | false    | Path of a recovery page to redirect the user when error occurs (except 401). To not show any error, you can use '/' to redirect immediately home. The error will be logged server side. |
-| `config.ignore_auth_filters`                |                                            | false    | A comma-separated list of endpoints to bypass authentication for                                                                                                                        |
+| `config.ignore_auth_filters`                |                                            | false    | A comma-separated list of Lua patterns for paths to bypass authentication for. Patterns are matched against the start of the request path (an implicit `^` is added unless present)     |
 | `config.redirect_uri`                       |                                            | false    | A relative or absolute URI the OP will redirect to after successful authentication                                                                                                      |
 | `config.userinfo_header_name`               | `X-Userinfo`                               | false    | The name of the HTTP header to use when passing the UserInfo to the upstream server                                                                                                     |
 | `config.id_token_header_name`               | `X-ID-Token`                               | false    | The name of the HTTP header to use when passing the ID Token to the upstream server                                                                                                     |
@@ -150,7 +150,7 @@ Server: kong/0.11.0
         "client_id": "kong-oidc",
         "discovery": "https://<oidc_provider>/.well-known/openid-configuration",
         "scope": "openid",
-        "ssl_verify": "no",
+        "ssl_verify": "yes",
         "client_secret": "29d98bf7-168c-4874-b8e9-9ba5e7382fa0",
         "token_endpoint_auth_method": "client_secret_post"
     },

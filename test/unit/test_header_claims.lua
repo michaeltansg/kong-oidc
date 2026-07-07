@@ -10,7 +10,7 @@ function TestHandler:setUp()
     return self.module_resty.openidc
   end
 
-  self.handler = require("kong.plugins.oidc.handler")()
+  self.handler = require("kong.plugins.oidc.handler")
 end
 
 function TestHandler:tearDown()
@@ -28,6 +28,31 @@ function TestHandler:test_header_add()
                         header_names = { "X-Email", "X-Aud"}, header_claims = { "email", "aud" } })
   lu.assertEquals(headers["X-Email"], "ghost@localhost")
   lu.assertEquals(headers["X-Aud"], "aud123")
+end
+
+function TestHandler:test_header_add_from_id_token_only()
+  -- no user object; must fall back to the id_token without crashing
+  self.module_resty.openidc.authenticate = function(opts)
+    return { id_token = { sub = "sub", aud = "aud123"} }, false
+  end
+  local headers = {}
+  kong.service.request.set_header = function(name, value) headers[name] = value end
+
+  self.handler:access({ disable_id_token_header = "yes", disable_userinfo_header = "yes",
+                        header_names = { "X-Aud" }, header_claims = { "aud" } })
+  lu.assertEquals(headers["X-Aud"], "aud123")
+end
+
+function TestHandler:test_header_claim_value_crlf_is_stripped()
+  self.module_resty.openidc.authenticate = function(opts)
+    return { user = {sub = "sub", email = "ghost@localhost\r\nX-Evil: 1"} }, false
+  end
+  local headers = {}
+  kong.service.request.set_header = function(name, value) headers[name] = value end
+
+  self.handler:access({ disable_id_token_header = "yes", disable_userinfo_header = "yes",
+                        header_names = { "X-Email" }, header_claims = { "email" } })
+  lu.assertEquals(headers["X-Email"], "ghost@localhost  X-Evil: 1")
 end
 
 lu.run()

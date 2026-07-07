@@ -133,6 +133,25 @@ local function set_consumer(consumer, credential)
   end
 end
 
+-- strip characters that would break out of a quoted auth-param
+-- (control chars incl. CR/LF, double quotes and backslashes)
+function M.sanitizeHeaderParam(value)
+  return (tostring(value or ""):gsub('[%c"\\]', ""))
+end
+
+function M.clearTokenHeaders(oidcConfig)
+  local clear_header = kong.service.request.clear_header
+  if oidcConfig.userinfo_header_name then
+    clear_header(oidcConfig.userinfo_header_name)
+  end
+  if oidcConfig.id_token_header_name then
+    clear_header(oidcConfig.id_token_header_name)
+  end
+  if oidcConfig.access_token_header_name then
+    clear_header(oidcConfig.access_token_header_name)
+  end
+end
+
 function M.injectAccessToken(accessToken, headerName, bearerToken)
   ngx.log(ngx.DEBUG, "Injecting " .. headerName)
   local token = accessToken
@@ -178,14 +197,18 @@ function M.injectHeaders(header_names, header_claims, sources)
     claim = header_claims[i] 
     kong.service.request.clear_header(header)
     for j = 1, #sources do
-      local source, claim_value
-      source = sources[j]
-      claim_value = source[claim]
-      -- Convert table to string if claim is a table
-      if type(claim_value) == "table" then
-        claim_value = table.concat(claim_value, ", ")
-      end
-      if (source and source[claim]) then
+      local source = sources[j]
+      if source and source[claim] ~= nil then
+        local claim_value = source[claim]
+        -- Convert table to string if claim is a table
+        if type(claim_value) == "table" then
+          claim_value = table.concat(claim_value, ", ")
+        end
+        -- claim values end up in upstream request headers; make sure they
+        -- cannot inject additional headers via CR/LF
+        if type(claim_value) == "string" then
+          claim_value = claim_value:gsub("[\r\n]", " ")
+        end
         kong.service.request.set_header(header, claim_value)
         break
       end
@@ -195,9 +218,13 @@ end
 
 function M.has_bearer_access_token()
   local header = ngx.req.get_headers()['Authorization']
-  if header and header:find(" ") then
+  -- repeated Authorization headers are returned as a table
+  if type(header) == "table" then
+    header = header[1]
+  end
+  if type(header) == "string" then
     local divider = header:find(' ')
-    if string.lower(header:sub(0, divider-1)) == string.lower("Bearer") then
+    if divider and string.lower(header:sub(1, divider-1)) == "bearer" then
       return true
     end
   end

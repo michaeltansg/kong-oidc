@@ -32,5 +32,13 @@ function TestToken:test_access_token_bearer_exists()
   lu.assertTrue(utils.has_bearer_access_token())
 end
 
+function TestToken:test_access_token_duplicate_authorization_headers()
+  -- repeated Authorization headers are returned as a table; must not crash
+  _G.ngx = {req = {
+    get_headers = function() return {Authorization = {"Bearer xxx", "Basic yyy"}} end }
+  }
+  lu.assertTrue(utils.has_bearer_access_token())
+end
+
 
 lu.run()

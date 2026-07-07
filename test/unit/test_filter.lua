@@ -47,5 +47,16 @@ function TestFilter:testProcessRequestWhenTheyAreNoFiltersEmpty()
   lu.assertTrue(filter.shouldProcessRequest(config))
 end
 
+function TestFilter:testUnanchoredFilterOnlyMatchesPathStart()
+  config.filters = { "/public" }
+
+  ngx.var.uri = "/public/page"
+  lu.assertFalse(filter.shouldProcessRequest(config))
+
+  -- must not bypass auth for other paths merely containing the filter
+  ngx.var.uri = "/private/public"
+  lu.assertTrue(filter.shouldProcessRequest(config))
+end
+
 
 lu.run()

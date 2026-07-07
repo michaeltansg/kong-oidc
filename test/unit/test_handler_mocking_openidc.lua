@@ -13,7 +13,7 @@ function TestHandler:setUp()
     return self.module_resty.openidc
   end
 
-  self.handler = require("kong.plugins.oidc.handler")()
+  self.handler = require("kong.plugins.oidc.handler")
 end
 
 function TestHandler:tearDown()
@@ -244,6 +244,34 @@ function TestHandler:test_introspect_bearer_token_and_empty_scope_nok()
 
   self.handler:access({introspection_endpoint = "x", bearer_only = "yes", use_jwks = "yes", userinfo_header_name = "X-Userinfo", validate_scope = "yes", scope = "bar"})
   lu.assertEquals(ngx.status, ngx.HTTP_FORBIDDEN)
+end
+
+function TestHandler:test_spoofed_identity_headers_are_cleared()
+  self.module_resty.openidc.authenticate = function(opts)
+    return {}, false
+  end
+
+  local cleared = {}
+  kong.service.request.clear_header = function(name) cleared[name] = true end
+
+  self.handler:access({userinfo_header_name = "X-Userinfo",
+                       id_token_header_name = "X-ID-Token",
+                       access_token_header_name = "X-Access-Token"})
+  lu.assertTrue(cleared["X-Userinfo"])
+  lu.assertTrue(cleared["X-ID-Token"])
+  lu.assertTrue(cleared["X-Access-Token"])
+end
+
+function TestHandler:test_bearer_only_with_bad_token_sanitizes_www_authenticate()
+  self.module_resty.openidc.introspect = function(opts)
+    return {}, 'bad\r\nSet-Cookie: pwned=1;"'
+  end
+  ngx.req.get_headers = function() return {Authorization = "Bearer xxx"} end
+
+  self.handler:access({introspection_endpoint = "x", bearer_only = "yes", realm = "kong"})
+
+  lu.assertEquals(ngx.header["WWW-Authenticate"], 'Bearer realm="kong",error="badSet-Cookie: pwned=1;"')
+  lu.assertEquals(ngx.status, ngx.HTTP_UNAUTHORIZED)
 end
 
 function TestHandler:test_introspect_bearer_token_and_scope_ok()
